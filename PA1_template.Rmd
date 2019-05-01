@@ -1,25 +1,145 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Rep Research Proj 1"
+author: "Nathaniel Yankelev"
+date: "April 30, 2019"
+output: html_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
-## Loading and preprocessing the data
+#Intro
+We will be looking at data from a personal activity device. 
+The raw data consists of a csv downloaded from here:
+https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip
+
+There are three variables:
+steps - # of steps in a 5m interval. missing data is NA.
+date - date on which measurement was taken.
+interval - the 5 minute identifier for the day.
+
+First we will read in the data and perform some rudimentary calculations on it.
+We will be using the dplyr package for ease of aggregating and other functions.
+
+``` {r intro}
+mydata <- read.csv("activity.csv")
+library(dplyr)
+str(mydata)
+```
+
+Everything looks reasonable. We might want to look at changing the type for date field.
+
+```{r intro2}
+mydata$date <- as.Date(mydata$date)
+str(mydata)
+```
+This will probably be better for us down the road, having the date column in "date" format as opposed to factor format.
+
+# Calculating mean and median of number of steps taken per day
+
+Here's a histogram of total steps per day so we have a visual depiction.
+
+```{r part2 setup, echo = FALSE}
+mydata_grouped <- filter(mydata, !is.na(steps)) %>%
+                  group_by(date) %>% 
+                  summarize(tot_steps = sum(steps, na.rm = TRUE))
+mydata_grouped <- cbind(mydata_grouped, 
+                  mean_steps = mean(mydata_grouped$tot_steps,na.rm=TRUE),
+                  median_steps = median(mydata_grouped$tot_steps,na.rm=TRUE))
+
+```
+
+
+```{r part2a}
+hist(mydata_grouped$tot_steps, main = "Total Steps per day", xlab = "steps per day", ylim = c(0,30), breaks = 6, col = "green", las=1)
+```
+
+
+Here's a table of the steps per day along with the mean and median of total steps per day.
+
+```{r part2b}
+mydata_grouped <- filter(mydata, !is.na(steps)) %>%
+                  group_by(date) %>% 
+                  summarize(tot_steps = sum(steps, na.rm = TRUE))
+mydata_grouped <- cbind(mydata_grouped, 
+                  mean_steps = mean(mydata_grouped$tot_steps,na.rm=TRUE),
+                  median_steps = median(mydata_grouped$tot_steps,na.rm=TRUE))
+mydata_grouped
+```
+
+#Daily activity pattern
+
+We make a time series plot of the 5 minute interval, with average number of steps taken across all days.
+
+```{r part 3a}
+mydata_grouped <- filter(mydata, !is.na(steps)) %>%
+                  group_by(interval) %>% 
+                  summarize(avg_steps = mean(steps, na.rm = TRUE))
+with(mydata_grouped,plot(interval, avg_steps,type="l"))
+```
+We can find the 5 minute interval that contains the maximum number of steps in a number of different ways. Let's sort the data by size and just look at the top.
+
+```{r part3b}
+head(arrange(mydata_grouped, desc(avg_steps)))
+```
+
+Thus we can see that the top interval is from 8:35:00 to 8:39:59 AM, with average of 206 steps.
+
+# Part 4 - imputing missing values
+How many of the rows in the original table are missing (NA?)
+
+```{r part4a}
+dim(subset(mydata, is.na(mydata$steps)))
+```
+
+The return is a dataframe with dimensions 2304x3, which means 2,304 of the values are missing.
+What probably makes the most sense to impute the missing values, just as a very rough and tumble solution is to use the average for the 5 minute interval as an imputed value. My process is going to be to separate out the NA values, apply the imputed values to those rows, reformat the data to make sure it's in the same format as before, and then recombine them. Then we will make a histogram.
+
+
+```{r part4b}
+mydata_NA <- filter(mydata, is.na(steps))
+mydata_NA <- merge(mydata_NA, mydata_grouped, by="interval")
+mydata_NA <- select(mydata_NA,c(4,3,1))
+mydata_NA <- rename(mydata_NA,steps = avg_steps)
+
+mydata_imputed <- rbind(filter(mydata, !is.na(steps)), mydata_NA)
+
+mydata_impgrouped <- group_by(mydata_imputed,date) %>% 
+                  summarize(tot_steps = sum(steps, na.rm = TRUE))
+
+hist(mydata_impgrouped$tot_steps, main = "Total Steps per day (imputed)", xlab = "steps per day", ylim = c(0,40), breaks = 6, col = "blue", las=1)
+```
+
+
+Here's a table of the steps per day along with the mean and median of total steps per day.
+
+```{r part4c}
+mydata_impgrouped <- cbind(mydata_impgrouped, 
+                  mean_steps = mean(mydata_impgrouped$tot_steps,na.rm=TRUE),
+                  median_steps = median(mydata_impgrouped$tot_steps,na.rm=TRUE))
+head(mydata_impgrouped)
+```
+
+As is logical with what we tried to do, the mean is now equal to the median since we put in so many new mean values. The histograms look similar except now there are more instances of the middle column, so many we had to adjust the y axis of the histogram.
+
+#Looking at weekdays
+
+We are going to add to our imputed dataset with weekday information and then investigate if step activity changes based on weekday vs. weekend.
+
+```{r part 5a}
+library(lattice)
+
+mydata_imp_wday <- mutate(mydata_imputed, weekday = weekdays(date))
+mydata_imp_wday <- mutate(mydata_imp_wday, weekend_ind = weekday %in% c("Sunday","Saturday"))
+mydata_imp_wday <- mutate(mydata_imp_wday,weekend_id = ifelse(mydata_imp_wday$weekend_ind,"Weekend","Weekday"))
+
+mydata_imp_wday_grouped <- group_by(mydata_imp_wday, interval, weekend_id) %>%
+                           summarize(avg_steps = mean(steps))
+
+xyplot(data=mydata_imp_wday_grouped, avg_steps~interval|weekend_id, type = "l")
 
 
 
-## What is mean total number of steps taken per day?
 
 
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
