@@ -176,7 +176,7 @@ mydata_grouped <- filter(mydata, !is.na(steps)) %>%
 with(mydata_grouped,plot(interval, avg_steps,type="l"))
 ```
 
-![](PA1_template_files/figure-html/part 3a-1.png)<!-- -->
+![](PA1_template_files/figure-html/part3a-1.png)<!-- -->
 We can find the 5 minute interval that contains the maximum number of steps in a number of different ways. Let's sort the data by size and just look at the top.
 
 
@@ -272,4 +272,4 @@ mydata_imp_wday_grouped <- group_by(mydata_imp_wday, interval, weekend_id) %>%
 xyplot(data=mydata_imp_wday_grouped, avg_steps~interval|weekend_id, type = "l")
 ```
 
-![](PA1_template_files/figure-html/part 5a-1.png)<!-- -->
+![](PA1_template_files/figure-html/part5a-1.png)<!-- -->

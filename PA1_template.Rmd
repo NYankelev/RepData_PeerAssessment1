@@ -42,7 +42,7 @@ This will probably be better for us down the road, having the date column in "da
 
 Here's a histogram of total steps per day so we have a visual depiction.
 
-```{r part2 setup, echo = FALSE}
+```{r part2_setup, echo = FALSE}
 mydata_grouped <- filter(mydata, !is.na(steps)) %>%
                   group_by(date) %>% 
                   summarize(tot_steps = sum(steps, na.rm = TRUE))
@@ -74,7 +74,7 @@ mydata_grouped
 
 We make a time series plot of the 5 minute interval, with average number of steps taken across all days.
 
-```{r part 3a}
+```{r part3a}
 mydata_grouped <- filter(mydata, !is.na(steps)) %>%
                   group_by(interval) %>% 
                   summarize(avg_steps = mean(steps, na.rm = TRUE))
@@ -129,7 +129,7 @@ As is logical with what we tried to do, the mean is now equal to the median sinc
 
 We are going to add to our imputed dataset with weekday information and then investigate if step activity changes based on weekday vs. weekend.
 
-```{r part 5a}
+```{r part5a}
 library(lattice)
 
 mydata_imp_wday <- mutate(mydata_imputed, weekday = weekdays(date))
